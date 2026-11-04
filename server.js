@@ -63,13 +63,31 @@ async function fetchCoin(coin, volume) {
   return out;
 }
 
+// Precio de Buda desde su propia fuente pública (no desde el agregador).
+// GET https://www.buda.com/api/v2/markets/{COIN}-COP/ticker  -> min_ask (compra), max_bid (venta)
+async function fetchBuda(coin) {
+  const url = `https://www.buda.com/api/v2/markets/${coin}-COP/ticker`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'Accept': 'application/json' } });
+  if (!res.ok) return null; // p. ej. 404 si ese mercado no existe
+  const j = await res.json();
+  const t = (j && j.ticker) || {};
+  const a = num(Array.isArray(t.min_ask) ? t.min_ask[0] : t.min_ask); // compra
+  const b = num(Array.isArray(t.max_bid) ? t.max_bid[0] : t.max_bid); // venta
+  if ((a && a > 0) || (b && b > 0)) return { a: a || null, b: b || null };
+  return null;
+}
+
 async function capture() {
   const cfg = getConfig();
   const snap = { ts: Date.now() };
   let anyOk = false, errs = [];
   for (const coin of COINS) {
-    try { snap[coin.toLowerCase()] = await fetchCoin(coin, cfg.volume || 1000); if (Object.keys(snap[coin.toLowerCase()]).length) anyOk = true; }
-    catch (e) { snap[coin.toLowerCase()] = {}; errs.push(e.message || String(e)); }
+    const key = coin.toLowerCase();
+    try { snap[key] = await fetchCoin(coin, cfg.volume || 1000); if (Object.keys(snap[key]).length) anyOk = true; }
+    catch (e) { snap[key] = {}; errs.push('criptoya ' + (e.message || String(e))); }
+    // Buda desde su propia API (prevalece sobre el agregador para la fila de Buda).
+    try { const bd = await fetchBuda(coin); if (bd) { snap[key].buda = bd; anyOk = true; } }
+    catch (e) { errs.push('buda ' + (e.message || String(e))); }
   }
   if (anyOk) {
     const hist = readJSON(HISTORY_FILE, []);
