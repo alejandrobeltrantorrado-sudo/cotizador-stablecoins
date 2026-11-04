@@ -22,8 +22,9 @@ Opcional: `APP_PASSWORD` = una clave, para exigir acceso. El front la pide una v
 ## Cómo funciona
 
 - **Captura automática**: cada `captureMinutes` (por defecto 60) el servidor llama a
-  `https://criptoya.com/api/USDT/COP/{volume}` y `.../USDC/COP/{volume}`, guarda
-  `totalAsk` (compra) y `totalBid` (venta) de cada exchange en `data/history.json`.
+  `https://criptoya.com/api/USDT/COP/{volume}` y `.../USDC/COP/{volume}` para la
+  competencia, y a la **API oficial de Buda** `https://www.buda.com/api/v2/markets/{USDT|USDC}-COP/ticker`
+  para la fila de Buda (`min_ask` = compra, `max_bid` = venta). Guarda todo en `data/history.json`.
 - **Captura manual**: formulario en la página para apps sin API. Se guarda en
   `data/manual.json`. Editable, con respaldo (exportar) e importar.
 - **Vistas**: Moneda (USDT/USDC) × Operación (Compra COP→cripto / Venta cripto→COP).
