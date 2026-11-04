@@ -3,7 +3,7 @@
 App Node sin dependencias para seguir las tasas de compra y venta de stablecoins
 en Colombia frente a Buda. Captura automáticamente desde el agregador público
 **CriptoYa** cada N minutos y guarda el historial; además permite captura manual
-de apps que no publican tasa (Plenti, Littio, Wenia, Global66, Vita).
+de apps que no publican tasa (Plenti, Littio, Wenia, Global66).
 
 ## Desplegar en Railway (igual que tus otros proyectos)
 
@@ -44,6 +44,7 @@ Opcional: `APP_PASSWORD` = una clave, para exigir acceso. El front la pide una v
 
 ## Nota de datos
 
-Las tasas automáticas provienen de CriptoYa (fuente pública de terceros). Las apps
-Plenti, Littio, Wenia, Global66 y Vita no publican cotizador; sus tasas son las que
-se carguen manualmente.
+Las tasas automáticas provienen de la API oficial de Buda, el ticker oficial de
+ARQ/DolarApp y el agregador público CriptoYa (que incluye Vita Wallet y muchos
+exchanges más). Las apps Plenti, Littio, Wenia y Global66 no publican cotizador;
+sus tasas son las que se carguen manualmente.
