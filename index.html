@@ -141,7 +141,7 @@
     </section>
 
     <section class="card form">
-      <p class="sec-title">Captura manual · apps sin cotizador público (Plenti, Littio, Wenia, Global66, Vita)</p>
+      <p class="sec-title">Captura manual · apps sin cotizador público (Plenti, Littio, Wenia, Global66)</p>
       <form id="mf">
         <div class="field"><label>App</label>
           <input class="company" id="mApp" list="mApps" placeholder="Ej. PLENTI" autocomplete="off" required />
@@ -186,7 +186,7 @@
         <thead><tr><th>App</th><th>Stablecoin</th><th>Modelo de precio</th><th>Compra/Venta</th><th>Tarjeta</th><th>Rendimiento</th><th>Enfoque</th></tr></thead>
         <tbody id="svcBody"></tbody>
       </table></div>
-      <p class="note"><b>Buda</b> y <b>ARQ</b> usan su propia API oficial (Buda: <span class="mono">min_ask</span>/<span class="mono">max_bid</span>; ARQ: <span class="mono">api.arqfinance.com</span>). El resto de la competencia: agregador público CriptoYa (compra = totalAsk, venta = totalBid). Las apps manuales (Plenti, Littio, Wenia, Global66, Vita) no publican tasa consultable; se cargan a mano.</p>
+      <p class="note"><b>Buda</b> y <b>ARQ</b> usan su propia API oficial (Buda: <span class="mono">min_ask</span>/<span class="mono">max_bid</span>; ARQ: <span class="mono">api.arqfinance.com</span>). El resto de la competencia: agregador público CriptoYa (compra = totalAsk, venta = totalBid). Las apps manuales (Plenti, Littio, Wenia, Global66) no publican tasa consultable; se cargan a mano.</p>
     </section>
   </div>
 
@@ -202,7 +202,7 @@
 <script>
 "use strict";
 const COLORS=["--c1","--c2","--c3","--c4","--c5","--c6","--c7","--c8"];
-const LABELS={buda:"Buda",bitso:"Bitso",eldorado:"El Dorado",dolarapp:"DolarApp/ARQ",ripio:"Ripio",cryptomkt:"CryptoMarket",cryptomktpro:"CryptoMarket",binancep2p:"Binance P2P",binance:"Binance",okexp2p:"OKX P2P",okx:"OKX",bybit:"Bybit",bybitp2p:"Bybit P2P",kucoin:"KuCoin",kucoinp2p:"KuCoin P2P",mexc:"MEXC",bitget:"Bitget",xapo:"Xapo",lemoncash:"Lemon",letsbit:"Letsbit",fiwind:"Fiwind",belo:"Belo",trubit:"Trubit",plenti:"Plenti",littio:"Littio",wenia:"Wenia","global 66":"Global66","vita wallet":"Vita Wallet"};
+const LABELS={buda:"Buda",dolarapp:"ARQ (DolarApp)",bitso:"Bitso",bitsoalpha:"Bitso",eldorado:"El Dorado",eldoradop2p:"El Dorado P2P",ripio:"Ripio",cryptomkt:"CryptoMarket",cryptomktpro:"CryptoMarket",binancep2p:"Binance P2P",binance:"Binance",okexp2p:"OKX P2P",okx:"OKX",bybit:"Bybit",bybitp2p:"Bybit P2P",kucoin:"KuCoin",kucoinp2p:"KuCoin P2P",mexc:"MEXC",mexcp2p:"MEXC P2P",bitget:"Bitget",bitgetp2p:"Bitget P2P",bingxp2p:"BingX P2P",xapo:"Xapo",lemoncash:"Lemon",letsbit:"Letsbit",fiwind:"Fiwind",belo:"Belo",trubit:"Trubit",saldo:"Saldo",p2pme:"P2P.me",vitawallet:"Vita Wallet",plenti:"Plenti",littio:"Littio",wenia:"Wenia","global 66":"Global66","vita wallet":"Vita Wallet"};
 const SERVICES=[
   ["Buda","USDT · USDC","Exchange (order book)","Ambas","No","No","Exchange cripto regulado","buda"],
   ["Plenti","USDT","Spot + ~0,2% spread","Ambas","No","Sí (brokers/ahorro)","Ahorro en dólares, fondear brokers","plenti"],
@@ -230,7 +230,7 @@ function label(id){return LABELS[id]||String(id).toUpperCase();}
 function kindOf(id){return DATA.manualApps.map(up).includes(id)?"manual":"auto";}
 function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||"#888";}
 
-document.getElementById("mApps").innerHTML=["PLENTI","LITTIO","WENIA","GLOBAL 66","VITA WALLET"].map(c=>`<option value="${c}">`).join("");
+document.getElementById("mApps").innerHTML=["PLENTI","LITTIO","WENIA","GLOBAL 66"].map(c=>`<option value="${c}">`).join("");
 
 // ---- API ----
 function api(path,opts){opts=opts||{};const u=new URL(path,location.origin);if(KEY)u.searchParams.set("key",KEY);return fetch(u,opts);}
