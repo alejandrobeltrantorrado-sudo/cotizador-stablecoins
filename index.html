@@ -186,7 +186,7 @@
         <thead><tr><th>App</th><th>Stablecoin</th><th>Modelo de precio</th><th>Compra/Venta</th><th>Tarjeta</th><th>Rendimiento</th><th>Enfoque</th></tr></thead>
         <tbody id="svcBody"></tbody>
       </table></div>
-      <p class="note">Fuente del precio automático: agregador público CriptoYa (compra = totalAsk, venta = totalBid). Las apps manuales no publican tasa; se cargan a mano.</p>
+      <p class="note">Precio de <b>Buda</b>: su propia API oficial (<span class="mono">min_ask</span> = compra, <span class="mono">max_bid</span> = venta). Competencia: agregador público CriptoYa (compra = totalAsk, venta = totalBid). Las apps manuales no publican tasa; se cargan a mano.</p>
     </section>
   </div>
 
@@ -304,10 +304,11 @@ function render(){
       cond=`<td class="cond" style="color:${c}">${adv>0?"Buda mejor":adv<0?"Buda peor":"Igual"}</td>`;
       diff=`<td class="mono" style="color:${c}">${adv>0?"+":""}${fmt.format(adv)}</td>`;
     }
-    const kindPill=r.kind==="manual"?'<span class="pill">manual</span>':'<span class="pill">auto</span>';
+    const kindPill=r.kind==="manual"?'<span class="pill">manual</span>':(r.buda?'<span class="pill">oficial</span>':'<span class="pill">auto</span>');
+    const srcTxt=r.kind==="manual"?"Manual":(r.buda?"Buda (API)":"CriptoYa");
     const when=new Date(r.ts).toLocaleString("es-CO",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
     return `<tr class="${r.buda?'buda':''}"><td><span class="swatch" style="background:${col}"></span>${label(r.id)}</td>
-      <td style="color:var(--muted)">${r.kind==="manual"?"Manual":"CriptoYa"}${kindPill}</td>
+      <td style="color:var(--muted)">${srcTxt}${kindPill}</td>
       <td class="mono">${fmt.format(r.rate)}</td>${cond}${diff}
       <td class="mono" style="color:var(--muted)">${when}</td></tr>`;
   }).join("");
