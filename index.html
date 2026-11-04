@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Dashboard Stablecoins COP · Buda</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#f3f6f4; --panel:#ffffff; --panel2:#eef2f0; --line:#e0e6e3;
+    --txt:#14201b; --muted:#5c6862; --accent:#12a05e;
+    --buda-bg:#e8f6ee; --buda-line:#12a05e; --buda-text:#0c7a45;
+    --win:#cf3b41; --lose:#12a05e; --grid:#e7edea;
+    --c1:#3b7cff; --c2:#e08a1e; --c3:#b5539c; --c4:#d1495b; --c5:#6a8f4f; --c6:#8a6d3b; --c7:#2aa6a6; --c8:#9b5de5;
+    --shadow:0 1px 3px rgba(20,40,30,.06);
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0e1512; --panel:#141b18; --panel2:#18201c; --line:#26302b;
+    --txt:#e7ece9; --muted:#8a978f; --accent:#3ecb86;
+    --buda-bg:#12241b; --buda-line:#2f8f63; --buda-text:#5fd39a;
+    --win:#e2686d; --lose:#4cc98a; --grid:#222b26;
+    --c1:#5b9bff; --c2:#e8a54a; --c3:#cf76b8; --c4:#e56d78; --c5:#8db06a; --c6:#b39256; --c7:#4fc7c7; --c8:#b98cf0;
+    --shadow:0 1px 3px rgba(0,0,0,.3);
+  }}
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0e1512; --panel:#141b18; --panel2:#18201c; --line:#26302b;
+    --txt:#e7ece9; --muted:#8a978f; --accent:#3ecb86;
+    --buda-bg:#12241b; --buda-line:#2f8f63; --buda-text:#5fd39a;
+    --win:#e2686d; --lose:#4cc98a; --grid:#222b26;
+    --c1:#5b9bff; --c2:#e8a54a; --c3:#cf76b8; --c4:#e56d78; --c5:#8db06a; --c6:#b39256; --c7:#4fc7c7; --c8:#b98cf0;
+    --shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1120px;margin:0 auto;padding:22px 16px;}
+  header{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;margin-bottom:4px;}
+  h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em;} h1 .dot{color:var(--accent);}
+  .subtitle{color:var(--muted);font-size:13px;}
+  .statusline{color:var(--muted);font-size:12.5px;margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .refresh{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+  section{margin-bottom:22px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);}
+  .sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 10px;}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .tab{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+  .tab.on{background:var(--buda-bg);border-color:var(--buda-line);color:var(--buda-text);}
+  .tabgroup{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .tabgroup .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;margin-right:2px;}
+  .badge{font-size:13px;font-weight:700;padding:7px 13px;border-radius:999px;margin-left:auto;}
+  .badge.good{background:var(--buda-bg);color:var(--buda-text);border:1px solid var(--buda-line);}
+  .badge.warn{background:var(--panel2);color:var(--muted);border:1px solid var(--line);}
+  .wrapx{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{padding:11px 13px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right;}
+  th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;background:var(--panel2);}
+  tbody tr:last-child td{border-bottom:0;}
+  tr.buda td{background:var(--buda-bg);}
+  tr.buda td:first-child{border-left:3px solid var(--buda-line);font-weight:700;color:var(--buda-text);}
+  .swatch{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;vertical-align:middle;}
+  .pill{font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;}
+  .cond{font-weight:600;}
+  .empty{padding:26px 18px;color:var(--muted);text-align:center;font-size:14px;}
+  .note{color:var(--muted);font-size:12px;margin-top:10px;}
+  .chart{padding:16px 18px;}
+  .chart-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px;}
+  .legend span{display:inline-flex;align-items:center;cursor:default;}
+  svg{display:block;width:100%;height:auto;}
+  .axis{fill:var(--muted);font-size:10px;font-family:"IBM Plex Mono",monospace;}
+  .gridline{stroke:var(--grid);stroke-width:1;}
+  #chart{position:relative;} #chart circle{cursor:pointer;}
+  .tip{position:absolute;pointer-events:none;z-index:5;background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow);padding:8px 10px;font-size:12px;display:none;min-width:150px;}
+  .tip.show{display:block;} .tip b{display:block;font-size:13px;margin-bottom:2px;} .tip .r{font-family:"IBM Plex Mono",monospace;font-weight:600;} .tip .m{color:var(--muted);}
+  .form{padding:16px 18px;}
+  .form form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 11px;font:inherit;}
+  .field input.company{width:170px;} .field input.rate{width:120px;} .field input.small{width:150px;}
+  button.go{background:var(--accent);color:#04170e;border:0;border-radius:9px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;}
+  button:disabled{opacity:.5;cursor:default;}
+  .msg{font-size:12.5px;align-self:center;} .msg.err{color:var(--win);} .msg.ok{color:var(--lose);}
+  .toolbtn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+  .hist td button{padding:5px 10px;font-size:12px;border-radius:7px;font-weight:600;cursor:pointer;}
+  .hist .edit{background:var(--panel2);color:var(--txt);border:1px solid var(--line);}
+  .hist .del{background:transparent;color:var(--win);border:1px solid var(--line);margin-left:6px;}
+  .hist .save{background:var(--accent);color:#04170e;border:0;} .hist .cancel{background:transparent;border:1px solid var(--line);color:var(--muted);margin-left:6px;}
+  .hist input,.hist select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:5px 7px;font:inherit;font-size:13px;}
+  .svc td:first-child{font-weight:600;} .svc .yes{color:var(--lose);font-weight:700;} .svc .no{color:var(--muted);}
+  .gate{max-width:360px;margin:60px auto;padding:22px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);text-align:center;}
+  .gate input{width:100%;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--txt);font:inherit;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="dot">●</span> Dashboard Stablecoins · COP ↔ USDT/USDC</h1>
+    <span class="subtitle">Seguimiento de tasas de la competencia frente a Buda · Colombia</span>
+  </header>
+  <div class="statusline">
+    <button class="refresh" id="refreshBtn" type="button">↻ Actualizar ahora</button>
+    <span id="status">cargando…</span>
+    <span id="volNote"></span>
+  </div>
+
+  <div id="app">
+    <div class="tabs">
+      <div class="tabgroup"><span class="lbl">Moneda</span>
+        <button class="tab coin on" data-coin="USDT" type="button">USDT</button>
+        <button class="tab coin" data-coin="USDC" type="button">USDC</button>
+      </div>
+      <div class="tabgroup" style="margin-left:14px"><span class="lbl">Operación</span>
+        <button class="tab side on" data-side="buy" type="button">Compra (COP→cripto)</button>
+        <button class="tab side" data-side="sell" type="button">Venta (cripto→COP)</button>
+      </div>
+      <span class="badge" id="badge" hidden></span>
+    </div>
+
+    <section>
+      <div class="chart-head" style="margin-bottom:8px">
+        <p class="sec-title" style="margin:0" id="tableTitle">Comparación actual</p>
+        <button class="toolbtn" id="manageToggle" type="button">Ocultar apps</button>
+      </div>
+      <div class="card managePanel" id="managePanel" hidden style="padding:14px 16px;margin-bottom:10px"></div>
+      <div class="wrapx"><table>
+        <thead><tr><th>App</th><th>Tipo</th><th>Tasa (COP)</th><th>vs Buda</th><th>Diferencia</th><th>Actualizado</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
+      </table></div>
+      <p class="note" id="tableNote"></p>
+    </section>
+
+    <section class="card chart">
+      <div class="chart-head"><p class="sec-title" style="margin:0">Evolución de la tasa</p><span class="status" id="chartInfo"></span></div>
+      <div id="chart"><div id="chartsvg"></div><div class="tip" id="tip"></div></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="card form">
+      <p class="sec-title">Captura manual · apps sin cotizador público (Plenti, Littio, Wenia, Global66, Vita)</p>
+      <form id="mf">
+        <div class="field"><label>App</label>
+          <input class="company" id="mApp" list="mApps" placeholder="Ej. PLENTI" autocomplete="off" required />
+          <datalist id="mApps"></datalist>
+        </div>
+        <div class="field"><label>Moneda</label>
+          <select id="mCoin"><option>USDT</option><option>USDC</option></select>
+        </div>
+        <div class="field"><label>Operación</label>
+          <select id="mSide"><option value="buy">Compra (COP→cripto)</option><option value="sell">Venta (cripto→COP)</option></select>
+        </div>
+        <div class="field"><label>Tasa (COP)</label>
+          <input class="rate mono" id="mRate" type="number" step="0.01" placeholder="3980" required />
+        </div>
+        <div class="field"><label>Fecha</label><input class="small" id="mDate" type="date" required /></div>
+        <div class="field"><label>Hora</label><input class="small" id="mTime" type="time" required /></div>
+        <button type="submit" class="go" id="mBtn">Agregar</button>
+        <span class="msg" id="mMsg"></span>
+      </form>
+    </section>
+
+    <section>
+      <div class="chart-head" style="margin-bottom:6px">
+        <p class="sec-title" style="margin:0">Historial manual</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto">
+          <button class="toolbtn" id="expJson" type="button">⬇ Respaldo</button>
+          <button class="toolbtn" id="impBtn" type="button">⬆ Importar</button>
+          <input id="impFile" type="file" accept=".json,application/json" hidden />
+          <button class="toolbtn" id="histToggle" type="button">Mostrar</button>
+        </div>
+      </div>
+      <span class="msg" id="ioMsg" style="display:block;margin:0 0 6px"></span>
+      <div class="wrapx" id="histWrap" hidden><table class="hist">
+        <thead><tr><th>App</th><th>Moneda</th><th>Op.</th><th>Tasa</th><th>Fecha</th><th>Hora</th><th>Acciones</th></tr></thead>
+        <tbody id="histBody"></tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <p class="sec-title">Servicios por app vs Buda <span style="text-transform:none;font-weight:400">· primer barrido, se irá completando con fuente</span></p>
+      <div class="wrapx"><table class="svc">
+        <thead><tr><th>App</th><th>Stablecoin</th><th>Modelo de precio</th><th>Compra/Venta</th><th>Tarjeta</th><th>Rendimiento</th><th>Enfoque</th></tr></thead>
+        <tbody id="svcBody"></tbody>
+      </table></div>
+      <p class="note">Fuente del precio automático: agregador público CriptoYa (compra = totalAsk, venta = totalBid). Las apps manuales no publican tasa; se cargan a mano.</p>
+    </section>
+  </div>
+
+  <div id="gate" class="gate" hidden>
+    <p class="sec-title" style="margin:0 0 4px">Acceso</p>
+    <p style="color:var(--muted);font-size:13px;margin:0">Ingresa la clave para ver el dashboard.</p>
+    <input id="gateKey" type="password" placeholder="Clave" />
+    <button class="go" id="gateBtn" type="button" style="width:100%">Entrar</button>
+    <p class="msg err" id="gateMsg" style="margin-top:8px"></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+const COLORS=["--c1","--c2","--c3","--c4","--c5","--c6","--c7","--c8"];
+const LABELS={buda:"Buda",bitso:"Bitso",eldorado:"El Dorado",dolarapp:"DolarApp/ARQ",ripio:"Ripio",cryptomkt:"CryptoMarket",cryptomktpro:"CryptoMarket",binancep2p:"Binance P2P",binance:"Binance",okexp2p:"OKX P2P",okx:"OKX",bybit:"Bybit",bybitp2p:"Bybit P2P",kucoin:"KuCoin",kucoinp2p:"KuCoin P2P",mexc:"MEXC",bitget:"Bitget",xapo:"Xapo",lemoncash:"Lemon",letsbit:"Letsbit",fiwind:"Fiwind",belo:"Belo",trubit:"Trubit",plenti:"Plenti",littio:"Littio",wenia:"Wenia","global 66":"Global66","vita wallet":"Vita Wallet"};
+const SERVICES=[
+  ["Buda","USDT · USDC","Exchange (order book)","Ambas","No","No","Exchange cripto regulado","buda"],
+  ["Plenti","USDT","Spot + ~0,2% spread","Ambas","No","Sí (brokers/ahorro)","Ahorro en dólares, fondear brokers","plenti"],
+  ["Littio","USDC","No publicado","Ambas","Sí","Sí (cuenta USDC)","Cuenta en dólares con rendimiento","littio"],
+  ["DolarApp / ARQ","USDC","Mercado + fee fijo (~US$3)","Ambas","Sí","No","Cuenta dólar, remesas, tarjeta","dolarapp"],
+  ["Wenia","Dólar digital","No publicado","Ambas","Sí","No","Vía Mi Bancolombia / Nequi","wenia"],
+  ["Global66","Cuenta multimoneda","Mercado, 1,5–2,8%","Ambas","Sí","No","Cuenta global, remesas","global 66"],
+  ["Bitso","USDT · USDC","Exchange + P2P","Ambas","Sí","Sí","Exchange regional","bitso"],
+  ["El Dorado","USDT · USDC","P2P","Ambas","No","No","P2P LatAm","eldorado"],
+  ["Binance","USDT · USDC","Exchange + P2P","Ambas","Sí","Sí","Exchange global","binancep2p"],
+];
+
+const fmt=new Intl.NumberFormat("es-CO",{maximumFractionDigits:2});
+const fmt4=new Intl.NumberFormat("es-CO",{maximumFractionDigits:4});
+let DATA={history:[],manual:[],config:{},manualApps:[],lastCapture:{}};
+let COIN="USDT", SIDE="buy";
+let HIDDEN=new Set();
+const lget=k=>{try{return localStorage.getItem(k);}catch{return null;}};
+const lset=(k,v)=>{try{localStorage.setItem(k,v);}catch{}};
+let KEY=lget("sbKey")||"";
+
+function up(s){return String(s||"").toLowerCase();}
+function isBuda(id){return /buda/.test(id||"");}
+function label(id){return LABELS[id]||String(id).toUpperCase();}
+function kindOf(id){return DATA.manualApps.map(up).includes(id)?"manual":"auto";}
+function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||"#888";}
+
+document.getElementById("mApps").innerHTML=["PLENTI","LITTIO","WENIA","GLOBAL 66","VITA WALLET"].map(c=>`<option value="${c}">`).join("");
+
+// ---- API ----
+function api(path,opts){opts=opts||{};const u=new URL(path,location.origin);if(KEY)u.searchParams.set("key",KEY);return fetch(u,opts);}
+async function loadData(){
+  try{
+    const r=await api("/api/data");
+    if(r.status===401){showGate();return;}
+    const j=await r.json();
+    DATA=j; HIDDEN=new Set(((j.config&&j.config.hidden)||[]).map(up));
+    hideGate();
+    const lc=j.lastCapture||{};
+    const when=lc.ts?new Date(lc.ts).toLocaleString("es-CO"):"—";
+    document.getElementById("status").textContent=`última captura: ${when}${(lc.ts&&lc.ok===false)?" (falló, reintenta)":""}`;
+    document.getElementById("volNote").textContent=`· ref: ${fmt.format(j.config.volume||1000)} ${COIN} · cada ${j.config.captureMinutes||60} min`;
+    render();
+  }catch(e){document.getElementById("status").textContent="error de conexión";}
+}
+function showGate(){document.getElementById("app").style.display="none";document.getElementById("gate").hidden=false;}
+function hideGate(){document.getElementById("app").style.display="";document.getElementById("gate").hidden=true;}
+document.getElementById("gateBtn").addEventListener("click",async()=>{
+  KEY=document.getElementById("gateKey").value.trim();lset("sbKey",KEY);
+  const r=await api("/api/data");
+  if(r.status===401){document.getElementById("gateMsg").textContent="Clave incorrecta.";return;}
+  loadData();
+});
+
+// ---- cálculo de filas (fuente -> tasa) para COIN+SIDE ----
+function lastSnapshot(){ for(let i=DATA.history.length-1;i>=0;i--){const s=DATA.history[i];if(s[up(COIN)]&&Object.keys(s[up(COIN)]).length)return s;} return null; }
+function autoRates(){ // {id:{rate,ts}}
+  const snap=lastSnapshot(); const out={}; if(!snap)return out;
+  const block=snap[up(COIN)]||{};
+  for(const [id,v] of Object.entries(block)){ const val=SIDE==="buy"?v.a:v.b; if(val&&val>0) out[id]={rate:val,ts:snap.ts}; }
+  return out;
+}
+function manualRates(){ // {id:{rate,ts}} última por app para COIN+SIDE
+  const out={};
+  for(const m of DATA.manual){ if(m.coin!==COIN||m.side!==SIDE)continue; const id=up(m.app);
+    if(!out[id]||m.ts>out[id].ts) out[id]={rate:m.rate,ts:m.ts}; }
+  return out;
+}
+function allRates(){ const a=autoRates(),m=manualRates(); const all=Object.assign({},a,m);
+  return Object.entries(all).filter(([id])=>!HIDDEN.has(id)).map(([id,v])=>({id,rate:v.rate,ts:v.ts,buda:isBuda(id),kind:kindOf(id)})); }
+// mejor primero: compra -> menor; venta -> mayor
+function sortBest(rows){ return [...rows].sort((a,b)=>SIDE==="buy"?a.rate-b.rate:b.rate-a.rate); }
+
+function render(){
+  document.getElementById("volNote").textContent=`· ref: ${fmt.format(DATA.config.volume||1000)} ${COIN} · captura cada ${DATA.config.captureMinutes||60} min`;
+  const dirTxt=SIDE==="buy"?`Compra ${COIN} con COP (menor = mejor)`:`Venta de ${COIN} por COP (mayor = mejor)`;
+  document.getElementById("tableTitle").textContent=`Comparación actual · ${COIN} · ${SIDE==="buy"?"Compra":"Venta"}`;
+  document.getElementById("tableNote").textContent=dirTxt+'. "vs Buda" en verde = Buda es mejor que esa app; "Diferencia" = ventaja de Buda en COP.';
+  const rows=allRates();
+  const buda=rows.find(r=>r.buda)||null;
+  const ordered=sortBest(rows);
+  // Buda primero visualmente, resto por mejor
+  const display=[...ordered].sort((a,b)=>{if(a.buda)return -1;if(b.buda)return 1;return 0;});
+  const colorIdx=new Map(); ordered.filter(r=>!r.buda).forEach((r,i)=>colorIdx.set(r.id,i));
+  // insignia
+  const badge=document.getElementById("badge");
+  if(buda&&ordered.length>1){ const pos=ordered.findIndex(r=>r.buda)+1,n=ordered.length;
+    badge.textContent=`★ Buda: ${pos}º de ${n} (${SIDE==="buy"?"más barato":"mejor venta"})`;
+    badge.className="badge "+(pos<=Math.max(1,Math.ceil(n/2))?"good":"warn"); badge.hidden=false;
+  } else badge.hidden=true;
+
+  const tb=document.getElementById("tbody");
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Aún no hay datos para esta vista. Espera la captura automática o agrega una tasa manual.</td></tr>'; }
+  else tb.innerHTML=display.map(r=>{
+    const col=r.buda?cssVar("--buda-line"):cssVar(COLORS[(colorIdx.get(r.id)||0)%COLORS.length]);
+    let cond='<td class="cond" style="color:var(--muted)">— referencia —</td>',diff='<td class="mono">—</td>';
+    if(!r.buda&&buda){ const adv=+(SIDE==="buy"?(r.rate-buda.rate):(buda.rate-r.rate)).toFixed(2);
+      const c=adv>0?cssVar("--lose"):adv<0?cssVar("--win"):cssVar("--muted");
+      cond=`<td class="cond" style="color:${c}">${adv>0?"Buda mejor":adv<0?"Buda peor":"Igual"}</td>`;
+      diff=`<td class="mono" style="color:${c}">${adv>0?"+":""}${fmt.format(adv)}</td>`;
+    }
+    const kindPill=r.kind==="manual"?'<span class="pill">manual</span>':'<span class="pill">auto</span>';
+    const when=new Date(r.ts).toLocaleString("es-CO",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+    return `<tr class="${r.buda?'buda':''}"><td><span class="swatch" style="background:${col}"></span>${label(r.id)}</td>
+      <td style="color:var(--muted)">${r.kind==="manual"?"Manual":"CriptoYa"}${kindPill}</td>
+      <td class="mono">${fmt.format(r.rate)}</td>${cond}${diff}
+      <td class="mono" style="color:var(--muted)">${when}</td></tr>`;
+  }).join("");
+
+  drawChart(colorIdx);
+  renderHistory();
+  renderManage();
+  renderServices();
+}
+
+// ---- gráfico de evolución (COIN+SIDE) ----
+function seriesForChart(){
+  const series=new Map(); // id -> [{ts,rate}]
+  for(const s of DATA.history){ const block=s[up(COIN)]; if(!block)continue;
+    for(const [id,v] of Object.entries(block)){ if(HIDDEN.has(id))continue; const val=SIDE==="buy"?v.a:v.b; if(!(val>0))continue;
+      if(!series.has(id))series.set(id,[]); series.get(id).push({ts:s.ts,rate:val}); } }
+  for(const m of DATA.manual){ if(m.coin!==COIN||m.side!==SIDE)continue; const id=up(m.app); if(HIDDEN.has(id))continue;
+    if(!series.has(id))series.set(id,[]); series.get(id).push({ts:m.ts,rate:m.rate}); }
+  for(const arr of series.values()) arr.sort((a,b)=>a.ts-b.ts);
+  return series;
+}
+function drawChart(colorIdx){
+  const host=document.getElementById("chartsvg"),legend=document.getElementById("legend");
+  const series=seriesForChart();
+  const pts=[...series.values()].flat();
+  if(!pts.length){host.innerHTML='<p class="empty">El gráfico aparece cuando haya capturas para esta vista.</p>';legend.innerHTML="";document.getElementById("chartInfo").textContent="";return;}
+  const W=960,H=320,m={t:14,r:14,b:28,l:62},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  let minT=Math.min(...pts.map(p=>p.ts)),maxT=Math.max(...pts.map(p=>p.ts));if(minT===maxT){minT-=3600000;maxT+=3600000;}
+  let minR=Math.min(...pts.map(p=>p.rate)),maxR=Math.max(...pts.map(p=>p.rate));const pad=(maxR-minR)*0.15||Math.abs(maxR*0.02)||1;minR-=pad;maxR+=pad;
+  const x=t=>m.l+(maxT===minT?iw/2:(t-minT)/(maxT-minT)*iw),y=r=>m.t+ih-(r-minR)/(maxR-minR)*ih;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución de tasa">`;
+  const yt=5;for(let i=0;i<=yt;i++){const val=minR+(maxR-minR)*i/yt,yy=y(val);
+    svg+=`<line class="gridline" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/><text class="axis" x="${m.l-8}" y="${yy+3}" text-anchor="end">${fmt.format(val)}</text>`;}
+  const fx=t=>{const d=new Date(t);return d.toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit"})+" "+d.toTimeString().slice(0,5);};
+  svg+=`<text class="axis" x="${m.l}" y="${H-8}" text-anchor="start">${fx(minT)}</text><text class="axis" x="${W-m.r}" y="${H-8}" text-anchor="end">${fx(maxT)}</text>`;
+  const leg=[]; const esc=s=>String(s).replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  for(const [id,a] of series){ const b=isBuda(id),col=b?cssVar("--buda-line"):cssVar(COLORS[(colorIdx.get(id)||0)%COLORS.length]);
+    if(a.length>1)svg+=`<polyline points="${a.map(p=>x(p.ts)+','+y(p.rate)).join(' ')}" fill="none" stroke="${col}" stroke-width="${b?3:1.8}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    for(const p of a){ const when=new Date(p.ts).toLocaleString("es-CO");
+      svg+=`<circle cx="${x(p.ts)}" cy="${y(p.rate)}" r="9" fill="transparent" class="pt" data-co="${esc(label(id))}" data-w="${esc(when)}" data-r="${esc(fmt.format(p.rate))}"/>`;
+      svg+=`<circle cx="${x(p.ts)}" cy="${y(p.rate)}" r="${b?4:2.5}" fill="${col}" pointer-events="none"/>`;}
+    leg.push(`<span><span class="swatch" style="background:${col}"></span>${label(id)}</span>`);}
+  svg+="</svg>";host.innerHTML=svg;legend.innerHTML=leg.join("");
+  document.getElementById("chartInfo").textContent=`${series.size} fuentes · ${DATA.history.length} capturas · ${COIN} ${SIDE==="buy"?"compra":"venta"}`;
+  wireTooltip();
+}
+function wireTooltip(){
+  const svgEl=document.getElementById("chartsvg"),tip=document.getElementById("tip"),chart=document.getElementById("chart");
+  if(!svgEl||!tip)return;
+  const show=t=>{const co=t.getAttribute("data-co"),w=t.getAttribute("data-w"),r=t.getAttribute("data-r");
+    tip.innerHTML=`<b>${co}</b><span class="r">${r} COP</span><br><span class="m">${w}</span>`;
+    const cr=chart.getBoundingClientRect(),pr=t.getBoundingClientRect();
+    let left=pr.left-cr.left+pr.width/2,top=pr.top-cr.top;tip.classList.add("show");
+    const tw=tip.offsetWidth,th=tip.offsetHeight;left=Math.max(4,Math.min(left-tw/2,cr.width-tw-4));top=top-th-10;if(top<0)top=pr.bottom-cr.top+10;
+    tip.style.left=left+"px";tip.style.top=top+"px";};
+  svgEl.addEventListener("mouseover",e=>{if(e.target.classList&&e.target.classList.contains("pt"))show(e.target);});
+  svgEl.addEventListener("mouseout",e=>{if(e.target.classList&&e.target.classList.contains("pt"))tip.classList.remove("show");});
+}
+
+// ---- servicios ----
+function renderServices(){
+  const b=document.getElementById("svcBody");
+  b.innerHTML=SERVICES.map(s=>{
+    const isB=/buda/i.test(s[0]);
+    const cell=(v)=>v==="Sí"?'<td class="yes">Sí</td>':v==="No"?'<td class="no">No</td>':`<td>${v}</td>`;
+    return `<tr${isB?' class="buda"':''}><td>${s[0]}</td><td>${s[1]}</td><td>${s[2]}</td><td>${s[3]}</td>${cell(s[4])}${cell(s[5])}<td>${s[6]}</td></tr>`;
+  }).join("");
+}
+
+// ---- ocultar apps ----
+function allKnownIds(){ const s=new Set(); const snap=lastSnapshot(); if(snap){for(const c of ["usdt","usdc"]){if(snap[c])Object.keys(snap[c]).forEach(k=>s.add(k));}}
+  DATA.manual.forEach(m=>s.add(up(m.app))); DATA.manualApps.forEach(a=>s.add(up(a))); return [...s].sort(); }
+function renderManage(){
+  const p=document.getElementById("managePanel"); if(!p||p.hidden)return;
+  const ids=allKnownIds();
+  p.innerHTML='<p class="sec-title" style="margin:0 0 6px">Ocultar apps · aplica a todos y a todas las vistas</p>'+
+    ids.map(id=>`<label style="display:inline-flex;align-items:center;gap:7px;margin:5px 14px 5px 0;font-size:14px;cursor:pointer"><input type="checkbox" data-id="${id}" ${HIDDEN.has(id)?"checked":""}/> ${label(id)}</label>`).join("");
+}
+document.getElementById("manageToggle").addEventListener("click",()=>{const p=document.getElementById("managePanel");p.hidden=!p.hidden;renderManage();});
+document.getElementById("managePanel").addEventListener("change",async(e)=>{const cb=e.target.closest("input[type=checkbox]");if(!cb)return;
+  const id=up(cb.getAttribute("data-id")); if(cb.checked)HIDDEN.add(id);else HIDDEN.delete(id);
+  render(); try{await api("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({hidden:[...HIDDEN]})});}catch{}});
+
+// ---- historial manual (editable) ----
+let editingId=null;
+function renderHistory(){
+  const body=document.getElementById("histBody");if(!body)return;
+  const rows=[...DATA.manual].sort((a,b)=>b.ts-a.ts);
+  if(!rows.length){body.innerHTML='<tr><td colspan="7" class="empty">Sin cotizaciones manuales.</td></tr>';return;}
+  body.innerHTML=rows.map(m=>{
+    if(m.id===editingId){
+      return `<tr data-id="${m.id}">
+        <td><input id="e_app" value="${(m.app||'').replace(/"/g,'&quot;')}" style="width:130px"/></td>
+        <td><select id="e_coin"><option${m.coin==='USDT'?' selected':''}>USDT</option><option${m.coin==='USDC'?' selected':''}>USDC</option></select></td>
+        <td><select id="e_side"><option value="buy"${m.side==='buy'?' selected':''}>Compra</option><option value="sell"${m.side==='sell'?' selected':''}>Venta</option></select></td>
+        <td><input id="e_rate" class="mono" type="number" step="0.01" value="${m.rate}" style="width:90px"/></td>
+        <td><input id="e_date" type="date" value="${m.fecha||''}"/></td>
+        <td><input id="e_time" type="time" value="${m.hora||''}"/></td>
+        <td><button class="save" data-act="save" data-id="${m.id}">Guardar</button><button class="cancel" data-act="cancel">Cancelar</button></td></tr>`;
+    }
+    return `<tr data-id="${m.id}"><td>${m.app}</td><td class="mono">${m.coin}</td><td>${m.side==='buy'?'Compra':'Venta'}</td>
+      <td class="mono">${fmt.format(m.rate)}</td><td class="mono">${m.fecha||'—'}</td><td class="mono">${m.hora||'—'}</td>
+      <td><button class="edit" data-act="edit" data-id="${m.id}">Editar</button><button class="del" data-act="del" data-id="${m.id}">Borrar</button></td></tr>`;
+  }).join("");
+}
+document.getElementById("histToggle").addEventListener("click",()=>{const w=document.getElementById("histWrap"),b=document.getElementById("histToggle");
+  const h=w.hasAttribute("hidden");if(h){w.removeAttribute("hidden");b.textContent="Ocultar";}else{w.setAttribute("hidden","");b.textContent="Mostrar";}});
+document.getElementById("histBody").addEventListener("click",async(e)=>{const btn=e.target.closest("button");if(!btn)return;
+  const act=btn.getAttribute("data-act"),id=btn.getAttribute("data-id");
+  if(act==="edit"){editingId=id;renderHistory();return;}
+  if(act==="cancel"){editingId=null;renderHistory();return;}
+  if(act==="save"){const body={id,app:document.getElementById("e_app").value,coin:document.getElementById("e_coin").value,side:document.getElementById("e_side").value,rate:document.getElementById("e_rate").value,fecha:document.getElementById("e_date").value,hora:document.getElementById("e_time").value};
+    try{const r=await api("/api/manual/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||("HTTP "+r.status));editingId=null;loadData();}catch(err){alert("Error al guardar: "+(err.message||err));}return;}
+  if(act==="del"){const row=DATA.manual.find(x=>x.id===id);const lab=row?`${row.app} ${row.coin} ${row.side}`:id;
+    if(!confirm("¿Borrar "+lab+"?"))return;
+    try{const r=await api("/api/manual/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});const j=await r.json();if(!r.ok)throw new Error(j.error||("HTTP "+r.status));loadData();}catch(err){alert("Error al borrar: "+(err.message||err));}}
+});
+
+// ---- alta manual ----
+document.getElementById("mf").addEventListener("submit",async(e)=>{e.preventDefault();
+  const msg=document.getElementById("mMsg"),btn=document.getElementById("mBtn");
+  const app=document.getElementById("mApp").value.trim(),coin=document.getElementById("mCoin").value,side=document.getElementById("mSide").value;
+  const rate=document.getElementById("mRate").value,fecha=document.getElementById("mDate").value,hora=document.getElementById("mTime").value;
+  if(!app||!(Number(rate)>0)){msg.textContent="App y tasa válidas obligatorias";msg.className="msg err";return;}
+  btn.disabled=true;msg.textContent="Guardando…";msg.className="msg";
+  try{const r=await api("/api/manual",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({app,coin,side,rate,fecha,hora})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||("HTTP "+r.status));
+    msg.textContent="Agregado.";msg.className="msg ok";document.getElementById("mApp").value="";document.getElementById("mRate").value="";loadData();
+  }catch(err){msg.textContent="Error: "+(err.message||err);msg.className="msg err";}finally{btn.disabled=false;}
+});
+
+// ---- exportar / importar manuales ----
+function ioMsg(t,c){const el=document.getElementById("ioMsg");el.textContent=t||"";el.className="msg"+(c?(" "+c):"");}
+function download(name,text,type){const blob=new Blob([text],{type:type||"application/octet-stream"});const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},300);}
+document.getElementById("expJson").addEventListener("click",()=>{if(!DATA.manual.length){ioMsg("No hay cotizaciones manuales para respaldar.","err");return;}
+  download(`manuales_stablecoins_${Date.now()}.json`,JSON.stringify({manual:DATA.manual},null,2),"application/json");ioMsg(`Respaldo descargado (${DATA.manual.length}).`,"ok");});
+document.getElementById("impBtn").addEventListener("click",()=>document.getElementById("impFile").click());
+document.getElementById("impFile").addEventListener("change",async(e)=>{const file=e.target.files&&e.target.files[0];e.target.value="";if(!file)return;
+  let data;try{data=JSON.parse(await file.text());}catch{ioMsg("El archivo no es un JSON válido.","err");return;}
+  const arr=Array.isArray(data)?data:(Array.isArray(data.manual)?data.manual:null);if(!arr){ioMsg("Formato inesperado.","err");return;}
+  if(!confirm(`Importar ${arr.length} registros manuales (se fusionan sin duplicar). ¿Continuar?`))return;ioMsg("Importando…");
+  try{const r=await api("/api/manual/import",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({manual:arr})});const j=await r.json();if(!r.ok)throw new Error(j.error||("HTTP "+r.status));
+    ioMsg(`Importado: ${j.added} nuevos, ${j.updated} actualizados, ${j.skipped} descartados.`,"ok");loadData();}catch(err){ioMsg("Error al importar: "+(err.message||err),"err");}});
+
+// ---- actualizar ahora ----
+document.getElementById("refreshBtn").addEventListener("click",async()=>{const b=document.getElementById("refreshBtn");b.disabled=true;b.textContent="↻ Capturando…";
+  try{await api("/api/capture",{method:"POST"});}catch{}
+  await loadData();b.disabled=false;b.textContent="↻ Actualizar ahora";});
+
+// ---- tabs ----
+document.querySelectorAll(".tab.coin").forEach(t=>t.addEventListener("click",()=>{COIN=t.getAttribute("data-coin");
+  document.querySelectorAll(".tab.coin").forEach(x=>x.classList.toggle("on",x===t));render();}));
+document.querySelectorAll(".tab.side").forEach(t=>t.addEventListener("click",()=>{SIDE=t.getAttribute("data-side");
+  document.querySelectorAll(".tab.side").forEach(x=>x.classList.toggle("on",x===t));render();}));
+
+// fecha/hora por defecto = ahora (Colombia)
+(function initDateTime(){const f=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date()).reduce((o,p)=>(o[p.type]=p.value,o),{});
+  const hh=f.hour==="24"?"00":f.hour;document.getElementById("mDate").value=`${f.year}-${f.month}-${f.day}`;document.getElementById("mTime").value=`${hh}:${f.minute}`;})();
+
+// ---- arranque ----
+render(); loadData(); setInterval(()=>{ if(!editingId) loadData(); }, 60000);
+</script>
+</body>
+</html>

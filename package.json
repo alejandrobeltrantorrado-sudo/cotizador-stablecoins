@@ -1,0 +1,8 @@
+{
+  "name": "dashboard-stablecoins-cop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard de tasas de stablecoins (COP <-> USDT/USDC) vs Buda",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
