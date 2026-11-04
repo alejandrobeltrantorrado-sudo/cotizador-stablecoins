@@ -27,7 +27,7 @@ const CONFIG_FILE  = path.join(DATA_DIR, 'config.json');
 const COINS = ['USDT', 'USDC'];
 const DEFAULT_CONFIG = { volume: 1000, captureMinutes: 60, hidden: [] };
 // Apps que NO tienen cotizador público → se cargan manualmente.
-const MANUAL_APPS = ['PLENTI', 'LITTIO', 'WENIA', 'GLOBAL 66', 'VITA WALLET'];
+const MANUAL_APPS = ['PLENTI', 'LITTIO', 'WENIA', 'GLOBAL 66'];
 const MAX_SNAPSHOTS_OUT = 2200; // ~90 días a 1/h; recorta el payload del GET (el disco guarda todo)
 
 function ensure() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {} }
