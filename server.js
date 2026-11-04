@@ -77,6 +77,26 @@ async function fetchBuda(coin) {
   return null;
 }
 
+// Precio de ARQ (DolarApp) desde su propio ticker público (el que usa su conversor).
+// GET https://api.arqfinance.com/v1/tickers?currencies=COP  -> pares tipo usdc_cop { ask, bid }
+// ask = compra (COP->cripto), bid = venta (cripto->COP). Robusto a varias formas de JSON.
+async function fetchArqAll() {
+  const url = 'https://api.arqfinance.com/v1/tickers?currencies=COP';
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'Accept': 'application/json' } });
+  if (!res.ok) return {};
+  const j = await res.json();
+  const items = [];
+  const push = (pair, o) => { if (!pair || !o || typeof o !== 'object') return;
+    const ask = num(o.ask != null ? o.ask : o.sell), bid = num(o.bid != null ? o.bid : o.buy);
+    items.push({ pair: String(pair).toLowerCase().replace(/[^a-z]/g, ''), a: ask, b: bid }); };
+  const root = Array.isArray(j) ? j : (Array.isArray(j.tickers) ? j.tickers : (Array.isArray(j.data) ? j.data : j));
+  if (Array.isArray(root)) { for (const it of root) push(it.pair || it.symbol || it.market || it.currency_pair || it.id, it); }
+  else if (root && typeof root === 'object') { for (const [k, v] of Object.entries(root)) push(k, v); }
+  const find = (coin) => { const m = items.find((x) => x.pair.includes(coin.toLowerCase() + 'cop'));
+    if (m && ((m.a && m.a > 0) || (m.b && m.b > 0))) return { a: m.a || null, b: m.b || null }; return null; };
+  return { usdt: find('usdt'), usdc: find('usdc') };
+}
+
 async function capture() {
   const cfg = getConfig();
   const snap = { ts: Date.now() };
@@ -89,6 +109,9 @@ async function capture() {
     try { const bd = await fetchBuda(coin); if (bd) { snap[key].buda = bd; anyOk = true; } }
     catch (e) { errs.push('buda ' + (e.message || String(e))); }
   }
+  // ARQ (DolarApp) desde su propio ticker (prevalece para la fila de ARQ).
+  try { const arq = await fetchArqAll(); for (const coin of COINS) { const k = coin.toLowerCase(); if (arq[k]) { snap[k].dolarapp = arq[k]; anyOk = true; } } }
+  catch (e) { errs.push('arq ' + (e.message || String(e))); }
   if (anyOk) {
     const hist = readJSON(HISTORY_FILE, []);
     hist.push(snap);
