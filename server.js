@@ -25,16 +25,51 @@ const CONFIG_FILE  = path.join(DATA_DIR, 'config.json');
 
 // Monedas a seguir y monto de referencia (en unidades de la moneda) para CriptoYa.
 const COINS = ['USDT', 'USDC'];
-const DEFAULT_CONFIG = { volume: 1000, captureMinutes: 60, hidden: [] };
+// Modelo de costos ADICIONALES sobre la tasa mostrada (lo que cada app informa). Editable desde la app.
+//  pct = % extra | fixedCOP = fijo en COP | fixedUSD = fijo en USD | note/src/date = trazabilidad
+const DEFAULT_FEES = {
+  buda:       { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'CriptoYa "buda" usa totalAsk/totalBid: ya incluye la comisión de Buda (precio neto). No sumar % extra.', src: 'CriptoYa', date: '2026-11' },
+  dolarapp:   { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'ARQ opera "sin spread". Prensa reporta US$3/transferencia; incierto si aplica al COP↔USDC. Activa fixedUSD=3 si quieres modelarlo.', src: 'La República / cobraendolares', date: '2026-11' },
+  plenti:     { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'Estimado = spot del mercado ± 0,2% (regla pública de Plenti). Ese 0,2% ya está en el estimado; si capturas la tasa real de la app, esa manda.', src: 'Plenti /tarifas', date: '2026-11' },
+  littio:     { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'Sin comisión de conversión aparte. Retiro a banco CO gratis (>20.000), 0,50 USDc si menor. On-chain 1%. Spread embebido, no publicado.', src: 'Littio ayuda', date: '2026-11' },
+  global66:   { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'Margen ~1,5–2,8% (estimación country manager) YA incluido en la tasa que capturas.', src: 'La República', date: '2026-11' },
+  wenia:      { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'Margen embebido, no publica cifra. Manual, ya incluido en su tasa.', src: '-', date: '2026-11' },
+  viio:       { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'Sin cotizador público; captura manual. Margen embebido en su tasa, no publicado.', src: '-', date: '2026-11' },
+  coinsenda:  { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'Sin cotizador público; captura manual. Costos embebidos en su tasa, no publicados.', src: '-', date: '2026-11' },
+  bitsoalpha: { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'totalAsk/Bid ya incluye trading (~0,65%). Depósito/retiro COP sin costo (Nequi/banco).', src: 'criptoinforme', date: '2026-11' },
+  binancep2p: { pct: 0, fixedCOP: 0, fixedUSD: 0, note: 'P2P sin comisión; el costo está en el spread ya mostrado.', src: 'criptoinforme', date: '2026-11' },
+};
+const DEFAULT_CONFIG = { volume: 1000, captureMinutes: 60, hidden: [], refCOP: 1000000, compareEffective: true, fees: DEFAULT_FEES };
 // Apps que NO tienen cotizador público → se cargan manualmente.
-const MANUAL_APPS = ['PLENTI', 'LITTIO', 'WENIA', 'GLOBAL 66'];
+const MANUAL_APPS = ['PLENTI', 'LITTIO', 'WENIA', 'GLOBAL 66', 'VIIO', 'COINSENDA'];
 const MAX_SNAPSHOTS_OUT = 2200; // ~90 días a 1/h; recorta el payload del GET (el disco guarda todo)
 
 function ensure() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {} }
 function readJSON(f, fb) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return fb; } }
 function writeJSON(f, obj) { ensure(); fs.writeFileSync(f, JSON.stringify(obj)); }
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
-function getConfig() { return Object.assign({}, DEFAULT_CONFIG, readJSON(CONFIG_FILE, {})); }
+function median(arr) { const a = arr.filter((x) => x > 0).sort((x, y) => x - y); if (!a.length) return null; const m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+function getConfig() {
+  const stored = readJSON(CONFIG_FILE, {});
+  const cfg = Object.assign({}, DEFAULT_CONFIG, stored);
+  // Fusión de costos por app: los NÚMEROS editados por el usuario mandan; las notas/fuente/fecha
+  // se refrescan siempre desde DEFAULT_FEES (última investigación). Así una actualización de código
+  // actualiza la documentación sin pisar lo que el usuario ajustó.
+  const fees = {}, ids = new Set([...Object.keys(DEFAULT_FEES), ...Object.keys(stored.fees || {})]);
+  for (const id of ids) {
+    const d = DEFAULT_FEES[id] || {}, s = (stored.fees || {})[id] || {};
+    fees[id] = {
+      pct: s.pct != null ? s.pct : (d.pct || 0),
+      fixedCOP: s.fixedCOP != null ? s.fixedCOP : (d.fixedCOP || 0),
+      fixedUSD: s.fixedUSD != null ? s.fixedUSD : (d.fixedUSD || 0),
+      note: d.note != null ? d.note : (s.note || ''),
+      src: d.src != null ? d.src : (s.src || ''),
+      date: d.date != null ? d.date : (s.date || ''),
+    };
+  }
+  cfg.fees = fees;
+  return cfg;
+}
 
 ensure();
 if (!fs.existsSync(HISTORY_FILE)) writeJSON(HISTORY_FILE, []);
@@ -63,16 +98,13 @@ async function fetchCoin(coin, volume) {
   return out;
 }
 
-// Precio de Buda desde su propia fuente pública (no desde el agregador).
-// GET https://www.buda.com/api/v2/markets/{COIN}-COP/ticker  -> min_ask (compra), max_bid (venta)
-async function fetchBuda(coin) {
-  const url = `https://www.buda.com/api/v2/markets/${coin}-COP/ticker`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'Accept': 'application/json' } });
-  if (!res.ok) return null; // p. ej. 404 si ese mercado no existe
-  const j = await res.json();
-  const t = (j && j.ticker) || {};
-  const a = num(Array.isArray(t.min_ask) ? t.min_ask[0] : t.min_ask); // compra
-  const b = num(Array.isArray(t.max_bid) ? t.max_bid[0] : t.max_bid); // venta
+// Precio de un exchange puntual desde CriptoYa (precio NETO: totalAsk/totalBid incluye su comisión).
+// GET https://criptoya.com/api/{exchange}/{coin}/COP/{volume}
+async function fetchExchangeCriptoya(ex, coin, volume) {
+  const res = await fetch(`https://criptoya.com/api/${ex}/${coin}/COP/${volume}`, { signal: AbortSignal.timeout(15000), headers: { 'Accept': 'application/json' } });
+  if (!res.ok) return null;
+  const v = await res.json();
+  const a = num(v.totalAsk) || num(v.ask), b = num(v.totalBid) || num(v.bid);
   if ((a && a > 0) || (b && b > 0)) return { a: a || null, b: b || null };
   return null;
 }
@@ -105,13 +137,20 @@ async function capture() {
     const key = coin.toLowerCase();
     try { snap[key] = await fetchCoin(coin, cfg.volume || 1000); if (Object.keys(snap[key]).length) anyOk = true; }
     catch (e) { snap[key] = {}; errs.push('criptoya ' + (e.message || String(e))); }
-    // Buda desde su propia API (prevalece sobre el agregador para la fila de Buda).
-    try { const bd = await fetchBuda(coin); if (bd) { snap[key].buda = bd; anyOk = true; } }
-    catch (e) { errs.push('buda ' + (e.message || String(e))); }
+    // Buda desde CriptoYa (precio NETO). Si el endpoint general no lo trajo, lo pedimos puntual.
+    if (!snap[key].buda) { try { const bd = await fetchExchangeCriptoya('buda', coin, cfg.volume || 1000); if (bd) { snap[key].buda = bd; anyOk = true; } } catch (e) { errs.push('buda ' + (e.message || String(e))); } }
   }
   // ARQ (DolarApp) desde su propio ticker (prevalece para la fila de ARQ).
   try { const arq = await fetchArqAll(); for (const coin of COINS) { const k = coin.toLowerCase(); if (arq[k]) { snap[k].dolarapp = arq[k]; anyOk = true; } } }
   catch (e) { errs.push('arq ' + (e.message || String(e))); }
+  // Plenti: estimado = spot del mercado ± 0,2% (regla pública de Plenti). Marcado est:true.
+  for (const coin of COINS) {
+    const k = coin.toLowerCase(), blk = snap[k] || {};
+    const asks = [], bids = [];
+    for (const [id, v] of Object.entries(blk)) { if (id === 'plenti') continue; if (v.a > 0) asks.push(v.a); if (v.b > 0) bids.push(v.b); }
+    const ma = median(asks), mb = median(bids);
+    if (ma || mb) snap[k].plenti = { a: ma ? +(ma * 1.002).toFixed(2) : null, b: mb ? +(mb * 0.998).toFixed(2) : null, est: true };
+  }
   if (anyOk) {
     const hist = readJSON(HISTORY_FILE, []);
     hist.push(snap);
@@ -253,7 +292,23 @@ const server = http.createServer(async (req, res) => {
       const cfg = getConfig();
       if (b.volume != null) { const v = num(b.volume); if (v > 0) cfg.volume = v; }
       if (b.captureMinutes != null) { const m = num(b.captureMinutes); if (m >= 5) cfg.captureMinutes = m; }
+      if (b.refCOP != null) { const r = num(b.refCOP); if (r > 0) cfg.refCOP = r; }
+      if (b.compareEffective != null) cfg.compareEffective = !!b.compareEffective;
       if (Array.isArray(b.hidden)) cfg.hidden = [...new Set(b.hidden.map((s) => String(s).toLowerCase().trim()).filter(Boolean))];
+      if (b.fees && typeof b.fees === 'object') {
+        cfg.fees = Object.assign({}, cfg.fees);
+        for (const [id, f] of Object.entries(b.fees)) {
+          if (!f || typeof f !== 'object') continue;
+          const prev = cfg.fees[id] || {};
+          cfg.fees[id.toLowerCase()] = {
+            pct: f.pct != null ? (num(f.pct) || 0) : (prev.pct || 0),
+            fixedCOP: f.fixedCOP != null ? (num(f.fixedCOP) || 0) : (prev.fixedCOP || 0),
+            fixedUSD: f.fixedUSD != null ? (num(f.fixedUSD) || 0) : (prev.fixedUSD || 0),
+            note: f.note != null ? String(f.note).slice(0, 300) : (prev.note || ''),
+            src: prev.src || f.src || 'manual', date: f.date || prev.date || '',
+          };
+        }
+      }
       writeJSON(CONFIG_FILE, cfg);
       if (b.captureMinutes != null) scheduleCaptures();
       return sendJSON(res, 200, { ok: true, config: cfg });
